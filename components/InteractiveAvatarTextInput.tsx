@@ -20,7 +20,7 @@ export default function InteractiveAvatarTextInput({
   onSubmit,
   setInput,
   endContent,
-  disabled = false,
+  disabled = true,
   loading = false,
 }: StreamingAvatarTextInputProps) {
   function handleSubmit() {
@@ -33,6 +33,7 @@ export default function InteractiveAvatarTextInput({
 
   return (
     <Input
+      id="transcription"
       endContent={
         <div className="flex flex-row items-center h-full">
           {endContent}
