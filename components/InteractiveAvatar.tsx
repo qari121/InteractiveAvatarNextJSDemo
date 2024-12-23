@@ -88,7 +88,6 @@ export default function InteractiveAvatar() {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.Low,
         avatarName: "Ann_Therapist_public",
-        knowledgeId: "b6ad717dc8cd472dafe383e9c793e14c",
         voice: {
           rate: 1,
           emotion: VoiceEmotion.SOOTHING,
@@ -97,10 +96,6 @@ export default function InteractiveAvatar() {
       });
 
       setData(res);
-      await avatar.current?.startVoiceChat({
-        useSilencePrompt: false
-      });
-      setChatMode("voice_mode");
       setSessionStarted(true);
     } catch (error) {
       console.error("Error starting avatar session:", error);
