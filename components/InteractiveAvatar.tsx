@@ -76,26 +76,21 @@ export default function InteractiveAvatar() {
       console.log(">>>>> Stream ready:", event.detail);
       setStream(event.detail);
     });
-    avatar.current?.on(StreamingEvents.USER_START, (event) => {
-      console.log(">>>>> User started talking:", event);
-      setIsUserTalking(true);
-    });
-    avatar.current?.on(StreamingEvents.USER_STOP, (event) => {
-      console.log(">>>>> User stopped talking:", event);
-      setIsUserTalking(false);
-    });
+
     try {
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.Low,
         avatarName: "Ann_Therapist_public",
+        knowledgeId: "b6ad717dc8cd472dafe383e9c793e14c",
         voice: {
-          rate: 1,
+          rate: 1.5,
           emotion: VoiceEmotion.SOOTHING,
         },
         disableIdleTimeout: true,
       });
 
       setData(res);
+      setChatMode("text_mode");
       setSessionStarted(true);
     } catch (error) {
       console.error("Error starting avatar session:", error);
@@ -109,15 +104,13 @@ export default function InteractiveAvatar() {
       setDebug("Avatar API not initialized");
       return;
     }
-    
     await avatar.current.speak({ 
       text: text, 
-      taskType: TaskType.TALK,
+      taskType: TaskType.TALK, 
       taskMode: TaskMode.SYNC 
     }).catch((e) => {
       setDebug(e.message);
     });
-    
     setIsLoadingRepeat(false);
     setText(""); // Clear input after sending
   }
