@@ -92,6 +92,18 @@ export default function InteractiveAvatar() {
       setData(res);
       setChatMode("text_mode");
       setSessionStarted(true);
+      
+      // Removed the startVoiceChat call
+      // await avatar.current?.startVoiceChat({
+      //   useSilencePrompt: false
+      // });
+
+      if (stream && mediaStream.current) {
+        mediaStream.current.srcObject = stream;
+        await mediaStream.current.play();
+        setDebug("Playing");
+      }
+
     } catch (error) {
       console.error("Error starting avatar session:", error);
     } finally {
@@ -132,15 +144,10 @@ export default function InteractiveAvatar() {
   }
 
   const handleChangeChatMode = useMemoizedFn(async (v) => {
-    if (v === chatMode) {
-      return;
-    }
     if (v === "text_mode") {
       avatar.current?.closeVoiceChat();
-    } else {
-      await avatar.current?.startVoiceChat();
     }
-    setChatMode(v);
+    setChatMode("text_mode");
   });
 
   const previousText = usePrevious(text);
@@ -161,10 +168,6 @@ export default function InteractiveAvatar() {
   useEffect(() => {
     if (stream && mediaStream.current) {
       mediaStream.current.srcObject = stream;
-      mediaStream.current.onloadedmetadata = () => {
-        mediaStream.current!.play();
-        setDebug("Playing");
-      };
     }
   }, [mediaStream, stream]);
 
@@ -191,7 +194,7 @@ export default function InteractiveAvatar() {
                   className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
                   size="md"
                   variant="shadow"
-                  onClick={handleInterrupt}
+                  onPress={handleInterrupt}
                 >
                   Interrupt task
                 </Button>
@@ -199,7 +202,7 @@ export default function InteractiveAvatar() {
                   className="bg-gradient-to-tr from-indigo-500 to-indigo-300  text-white rounded-lg"
                   size="md"
                   variant="shadow"
-                  onClick={endSession}
+                  onPress={endSession}
                 >
                   End session
                 </Button>
@@ -211,7 +214,7 @@ export default function InteractiveAvatar() {
                 className="bg-gradient-to-tr from-indigo-500 to-indigo-300 w-full text-white"
                 size="md"
                 variant="shadow"
-                onClick={startSession}
+                onPress={startSession}
               >
                 Start session
               </Button>
@@ -230,7 +233,6 @@ export default function InteractiveAvatar() {
             }}
           >
             <Tab key="text_mode" title="Text mode" />
-            <Tab key="voice_mode" title="Voice mode" />
           </Tabs>
           {chatMode === "text_mode" ? (
             <div className="w-full flex relative">
