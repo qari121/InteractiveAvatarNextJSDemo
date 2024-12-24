@@ -30,13 +30,17 @@ export default function InteractiveAvatar() {
   const [isLoadingRepeat, setIsLoadingRepeat] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
   const [debug, setDebug] = useState<string>();
+  const [knowledgeId, setKnowledgeId] = useState<string>("b6ad717dc8cd472dafe383e9c793e14c");
+  const [avatarId, setAvatarId] = useState<string>("Ann_Therapist_public");
+  const [voiceId, setVoiceId] = useState<string>("445a8c7de9e74ed2a0dd02d5885ac589");
+  const [language, setLanguage] = useState<string>('en');
+
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
   const mediaStream = useRef<HTMLVideoElement>(null);
   const avatar = useRef<StreamingAvatar | null>(null);
   const [chatMode, setChatMode] = useState("text_mode");
   const [isUserTalking, setIsUserTalking] = useState(false);
-  const [sessionStarted, setSessionStarted] = useState(false);
 
   async function fetchAccessToken() {
     try {
@@ -57,75 +61,74 @@ export default function InteractiveAvatar() {
 
   async function startSession() {
     setIsLoadingSession(true);
-    const newToken = await fetchAccessToken();
-
-    avatar.current = new StreamingAvatar({
-      token: newToken,
-    });
-    avatar.current.on(StreamingEvents.AVATAR_START_TALKING, (e) => {
-      console.log("Avatar started talking", e);
-    });
-    avatar.current.on(StreamingEvents.AVATAR_STOP_TALKING, (e) => {
-      console.log("Avatar stopped talking", e);
-    });
-    avatar.current.on(StreamingEvents.STREAM_DISCONNECTED, () => {
-      console.log("Stream disconnected");
-      endSession();
-    });
-    avatar.current?.on(StreamingEvents.STREAM_READY, (event) => {
-      console.log(">>>>> Stream ready:", event.detail);
-      setStream(event.detail);
-    });
-
     try {
+      const newToken = await fetchAccessToken();
+
+      avatar.current = new StreamingAvatar({
+        token: newToken,
+      });
+      avatar.current.on(StreamingEvents.AVATAR_START_TALKING, (e) => {
+        console.log("Avatar started talking", e);
+      });
+      avatar.current.on(StreamingEvents.AVATAR_STOP_TALKING, (e) => {
+        console.log("Avatar stopped talking", e);
+      });
+      avatar.current.on(StreamingEvents.STREAM_DISCONNECTED, () => {
+        console.log("Stream disconnected");
+        endSession();
+      });
+      avatar.current?.on(StreamingEvents.STREAM_READY, (event) => {
+        console.log(">>>>> Stream ready:", event.detail);
+        setStream(event.detail);
+      });
+
+      // Start the avatar session without voice chat
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.Low,
-        avatarName: "Ann_Therapist_public",
-        knowledgeId: "b6ad717dc8cd472dafe383e9c793e14c",
+        avatarName: avatarId,
+        knowledgeId: knowledgeId,
         voice: {
+          id: voiceId, // Use the specified voice ID
           rate: 1.5,
-          emotion: VoiceEmotion.SOOTHING,
+          emotion: VoiceEmotion.EXCITED,
         },
+        language: language,
         disableIdleTimeout: true,
       });
 
       setData(res);
-      setChatMode("text_mode");
-      setSessionStarted(true);
-      
-      // Removed the startVoiceChat call
-      // await avatar.current?.startVoiceChat({
-      //   useSilencePrompt: false
-      // });
-
-      if (stream && mediaStream.current) {
-        mediaStream.current.srcObject = stream;
-        await mediaStream.current.play();
-        setDebug("Playing");
-      }
+      // No voice chat initialization
+      setChatMode("text_mode"); // Set chat mode to text
 
     } catch (error) {
       console.error("Error starting avatar session:", error);
+      setDebug("An error occurred while starting the session.");
     } finally {
       setIsLoadingSession(false);
     }
   }
+
   async function handleSpeak() {
     setIsLoadingRepeat(true);
     if (!avatar.current) {
       setDebug("Avatar API not initialized");
       return;
     }
-    await avatar.current.speak({ 
-      text: text, 
-      taskType: TaskType.TALK, 
-      taskMode: TaskMode.SYNC 
-    }).catch((e) => {
-      setDebug(e.message);
-    });
-    setIsLoadingRepeat(false);
-    setText(""); // Clear input after sending
+
+    try {
+      // Use a task type that allows the avatar to process and respond to the input
+      await avatar.current.speak({
+        text: text,
+        taskType: TaskType.TALK, // Change this to the appropriate task type for response
+        taskMode: TaskMode.SYNC,
+      });
+    } catch (e) {
+      setDebug((e as Error).message);
+    } finally {
+      setIsLoadingRepeat(false);
+    }
   }
+
   async function handleInterrupt() {
     if (!avatar.current) {
       setDebug("Avatar API not initialized");
@@ -144,10 +147,15 @@ export default function InteractiveAvatar() {
   }
 
   const handleChangeChatMode = useMemoizedFn(async (v) => {
+    if (v === chatMode) {
+      return;
+    }
     if (v === "text_mode") {
       avatar.current?.closeVoiceChat();
+    } else {
+      await avatar.current?.startVoiceChat();
     }
-    setChatMode("text_mode");
+    setChatMode(v);
   });
 
   const previousText = usePrevious(text);
@@ -168,6 +176,12 @@ export default function InteractiveAvatar() {
   useEffect(() => {
     if (stream && mediaStream.current) {
       mediaStream.current.srcObject = stream;
+      mediaStream.current.onloadedmetadata = () => {
+        mediaStream.current!.play().catch(error => {
+          console.error("Error playing video:", error);
+        });
+        setDebug("Playing");
+      };
     }
   }, [mediaStream, stream]);
 
@@ -194,15 +208,7 @@ export default function InteractiveAvatar() {
                   className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
                   size="md"
                   variant="shadow"
-                  onPress={handleInterrupt}
-                >
-                  Interrupt task
-                </Button>
-                <Button
-                  className="bg-gradient-to-tr from-indigo-500 to-indigo-300  text-white rounded-lg"
-                  size="md"
-                  variant="shadow"
-                  onPress={endSession}
+                  onClick={endSession}
                 >
                   End session
                 </Button>
@@ -214,7 +220,7 @@ export default function InteractiveAvatar() {
                 className="bg-gradient-to-tr from-indigo-500 to-indigo-300 w-full text-white"
                 size="md"
                 variant="shadow"
-                onPress={startSession}
+                onClick={startSession}
               >
                 Start session
               </Button>
@@ -222,46 +228,16 @@ export default function InteractiveAvatar() {
           ) : (
             <Spinner color="default" size="lg" />
           )}
+          <InteractiveAvatarTextInput
+            disabled={!stream}
+            input={text}
+            label="Chat"
+            loading={isLoadingRepeat}
+            placeholder="Type something for the avatar to respond"
+            setInput={setText}
+            onSubmit={handleSpeak}
+          />
         </CardBody>
-        <Divider />
-        <CardFooter className="flex flex-col gap-3 relative">
-          <Tabs
-            aria-label="Options"
-            selectedKey={chatMode}
-            onSelectionChange={(v) => {
-              handleChangeChatMode(v);
-            }}
-          >
-            <Tab key="text_mode" title="Text mode" />
-          </Tabs>
-          {chatMode === "text_mode" ? (
-            <div className="w-full flex relative">
-              <InteractiveAvatarTextInput
-                disabled={!stream}
-                input={text}
-                label="Chat"
-                loading={isLoadingRepeat}
-                placeholder="Type something for the avatar to respond"
-                setInput={setText}
-                onSubmit={handleSpeak}
-              />
-              {text && (
-                <Chip className="absolute right-16 top-3">Listening</Chip>
-              )}
-            </div>
-          ) : (
-            <div className="w-full text-center">
-              <Button
-                isDisabled={!isUserTalking}
-                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white"
-                size="md"
-                variant="shadow"
-              >
-                {isUserTalking ? "Listening" : "Voice chat"}
-              </Button>
-            </div>
-          )}
-        </CardFooter>
       </Card>
       <p className="font-mono text-right">
         <span className="font-bold">Console:</span>
