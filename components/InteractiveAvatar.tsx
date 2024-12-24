@@ -175,13 +175,19 @@ export default function InteractiveAvatar() {
     if (stream && mediaStream.current) {
       mediaStream.current.srcObject = stream;
       mediaStream.current.onloadedmetadata = () => {
-        mediaStream.current!.play().catch(error => {
-          console.error("Error playing video:", error);
-        });
-        setDebug("Playing");
+        setDebug("Stream ready, click to play");
       };
     }
   }, [mediaStream, stream]);
+
+  const handlePlayVideo = () => {
+    if (mediaStream.current) {
+      mediaStream.current.play().catch(error => {
+        console.error("Error playing video:", error);
+      });
+      setDebug("Playing");
+    }
+  };
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -191,7 +197,6 @@ export default function InteractiveAvatar() {
             <div className="h-[500px] w-[900px] justify-center items-center flex rounded-lg overflow-hidden">
               <video
                 ref={mediaStream}
-                autoPlay
                 playsInline
                 style={{
                   width: "100%",
@@ -202,6 +207,14 @@ export default function InteractiveAvatar() {
                 <track kind="captions" />
               </video>
               <div className="flex flex-col gap-2 absolute bottom-3 right-3">
+                <Button
+                  className="bg-gradient-to-tr from-green-500 to-green-300 text-white rounded-lg"
+                  size="md"
+                  variant="shadow"
+                  onClick={handlePlayVideo}
+                >
+                  Play Video
+                </Button>
                 <Button
                   className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
                   size="md"
