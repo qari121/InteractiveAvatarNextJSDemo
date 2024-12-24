@@ -32,7 +32,6 @@ export default function InteractiveAvatar() {
   const [debug, setDebug] = useState<string>();
   const [knowledgeId, setKnowledgeId] = useState<string>("b6ad717dc8cd472dafe383e9c793e14c");
   const [avatarId, setAvatarId] = useState<string>("Ann_Therapist_public");
-  const [voiceId, setVoiceId] = useState<string>("445a8c7de9e74ed2a0dd02d5885ac589");
   const [language, setLanguage] = useState<string>('en');
 
   const [data, setData] = useState<StartAvatarResponse>();
@@ -88,9 +87,8 @@ export default function InteractiveAvatar() {
         avatarName: avatarId,
         knowledgeId: knowledgeId,
         voice: {
-          id: voiceId, // Use the specified voice ID
-          rate: 1.5,
-          emotion: VoiceEmotion.EXCITED,
+          rate: 1,
+          emotion: VoiceEmotion.SOOTHING,
         },
         language: language,
         disableIdleTimeout: true,
