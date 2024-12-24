@@ -1,6 +1,7 @@
 import { Input, Spinner, Tooltip } from "@nextui-org/react";
-import { Airplane, ArrowRight, PaperPlaneRight } from "@phosphor-icons/react";
+import { PaperPlaneRight } from "@phosphor-icons/react";
 import clsx from "clsx";
+import { useEffect } from "react";
 
 interface StreamingAvatarTextInputProps {
   label: string;
@@ -23,12 +24,29 @@ export default function InteractiveAvatarTextInput({
   disabled = true,
   loading = false,
 }: StreamingAvatarTextInputProps) {
+  // Function to handle external input
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).setTranscriptionInput = function (text: string) {
+        const inputField = document.getElementById("transcription") as HTMLInputElement;
+        if (inputField) {
+          setInput(text); // Update React state
+          inputField.value = text; // Update the DOM input field value
+          const event = new Event("input", { bubbles: true });
+          inputField.dispatchEvent(event); // Trigger React's state update
+        } else {
+          console.error("Input field not found!");
+        }
+      };
+    }
+  }, [setInput]);
+
   function handleSubmit() {
     if (input.trim() === "") {
       return;
     }
     onSubmit();
-    setInput("");
+    setInput(""); // Clear the input after submission
   }
 
   return (
