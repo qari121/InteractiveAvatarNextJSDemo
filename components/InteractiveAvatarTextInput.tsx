@@ -24,9 +24,9 @@ export default function InteractiveAvatarTextInput({
   disabled = true,
   loading = false,
 }: StreamingAvatarTextInputProps) {
-  // Function to handle external input
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Allow Unity's JavaScript to set the input text
       (window as any).setTranscriptionInput = function (text: string) {
         const inputField = document.getElementById("transcription") as HTMLInputElement;
         if (inputField) {
@@ -38,8 +38,18 @@ export default function InteractiveAvatarTextInput({
           console.error("Input field not found!");
         }
       };
+
+      // Allow Unity's JavaScript to directly trigger handleSubmit
+      (window as any).triggerSubmit = function () {
+        const inputField = document.getElementById("transcription") as HTMLInputElement;
+        if (inputField && inputField.value.trim() !== "") {
+          handleSubmit();
+        } else {
+          console.warn("Cannot submit: Input field is empty or not found.");
+        }
+      };
     }
-  }, [setInput]);
+  }, [setInput, input]);
 
   function handleSubmit() {
     if (input.trim() === "") {
